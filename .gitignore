@@ -5,3 +5,5 @@ venv
 **/.terraform.lock.hcl
 **/.terraform
 .terraform.tfstate*
+aws_key.pem
+aws_keys_pairs.pem
