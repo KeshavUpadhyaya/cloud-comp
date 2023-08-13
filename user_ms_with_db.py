@@ -1,6 +1,5 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify
 import sqlite3
-import hashlib
 import base64
 from flask_cors import CORS
 
@@ -142,7 +141,7 @@ def list_all_users():
 
 @app.route('/')
 def home():
-    return "SelfieLessActs user management microservice is working!\nOwner: CloudComp2"
+    return "User management microservice is working!\nOwner: CloudComp2"
 
 
 if __name__ == '__main__':
