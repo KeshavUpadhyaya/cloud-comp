@@ -19,4 +19,4 @@ EXPOSE 80
 
 ENTRYPOINT ["python3"]
 
-CMD ["user_ms_with_db.py"]
+CMD ["user_mgmt_app.py"]

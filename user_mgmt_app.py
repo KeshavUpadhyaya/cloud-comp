@@ -3,8 +3,6 @@ import sqlite3
 import base64
 from flask_cors import CORS
 
-count_http_request = 0
-
 app = Flask(__name__)
 
 
@@ -31,44 +29,14 @@ def isBase64(sb):
         return False
 
 
-def add_count():
-    global count_http_request
-    count_http_request += 1
-
-
 app = Flask(__name__)
 api = CORS(app)
-
-
-@app.errorhandler(405)
-def func(e):
-    add_count()
-    return "", 405
-
-
-@app.route('/api/v1/_count', methods=['GET'])
-def http_count():
-    if (request.method == 'GET'):
-        return jsonify(list([count_http_request])), 200
-    else:
-        return jsonify({"message": "Method not allowed"}), 405
-
-
-@app.route('/api/v1/_count', methods=['DELETE'])
-def http_count_reset():
-    global count_http_request
-    if (request.method == 'DELETE'):
-        count_http_request = 0
-        return jsonify({}), 200
-    else:
-        return jsonify({"message": "Method not allowed"}), 405
 
 # 1 Add user--------------------------------------------------------------------
 
 
 @app.route('/api/v1/users', methods=['POST'])
 def add_user():
-    add_count()
     if (request.method == 'POST'):
         with sqlite3.connect("users.db") as connectionState:
             cursor = connectionState.cursor()
@@ -100,7 +68,6 @@ def add_user():
 
 @app.route('/api/v1/users/<username>', methods=['DELETE'])
 def remove_user(username):
-    add_count()
     if (request.method == 'DELETE'):
         with sqlite3.connect("users.db") as connectionState:
             cursor = connectionState.cursor()
@@ -123,7 +90,6 @@ def remove_user(username):
 
 @app.route('/api/v1/users', methods=['GET'])
 def list_all_users():
-    add_count()
     if (request.method == 'GET'):
         with sqlite3.connect("users.db") as connectionState:
             cursor = connectionState.cursor()
