@@ -213,3 +213,5 @@ resource "aws_cloudwatch_metric_alarm" "scale_up" {
     AutoScalingGroupName = aws_autoscaling_group.flask_app.name
   }
 }
+
+
