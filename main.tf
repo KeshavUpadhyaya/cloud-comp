@@ -185,7 +185,7 @@ output "load_balancer_public_ip" {
 
 resource "aws_autoscaling_attachment" "flask_app" {
   autoscaling_group_name = aws_autoscaling_group.flask_app_asg.id
-  alb_target_group_arn   = aws_lb_target_group.flask_app.id
+  lb_target_group_arn   = aws_lb_target_group.flask_app.id
 }
 
 
