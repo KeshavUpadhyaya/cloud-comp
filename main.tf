@@ -163,7 +163,7 @@ resource "aws_lb_listener_rule" "flask_app" {
 
   condition {
     path_pattern {
-      values = ["/"]
+      values = ["/", "/api/v1/users"]
     }
   }
 }
