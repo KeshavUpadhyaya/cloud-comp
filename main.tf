@@ -146,7 +146,6 @@ resource "aws_lb_listener" "flask_app" {
     fixed_response {
       content_type = "text/plain"
       status_code  = "200"
-      content      = "OK"
     }
   }
 }
