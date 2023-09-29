@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify
 import sqlite3
-import base64
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -14,19 +13,6 @@ def is_sha1(maybe_sha):
     except ValueError:
         return False
     return True
-
-
-def isBase64(sb):
-    try:
-        if type(sb) == str:
-            sb_bytes = bytes(sb, 'ascii')
-        elif type(sb) == bytes:
-            sb_bytes = sb
-        else:
-            raise ValueError("Argument must be string or bytes")
-        return base64.b64encode(base64.b64decode(sb_bytes)) == sb_bytes
-    except Exception:
-        return False
 
 
 app = Flask(__name__)
@@ -107,7 +93,7 @@ def list_all_users():
 
 @app.route('/')
 def home():
-    return "User management microservice is working!\nOwner: CloudComp2"
+    return "User account management app is working! Owner: CloudComp2"
 
 
 if __name__ == '__main__':
