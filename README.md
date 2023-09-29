@@ -1,5 +1,5 @@
 # cloud-comp
-A simple flask app deployed to AWS using Terraform and Docker. SQLite3 embedded database is used to store data.
+A simple flask app that can be deployed to AWS using Terraform and Docker. SQLite3 embedded database is used to store data.
 
 Make sure you've installed terraform and you've copied the AWS CLI credentials to '~/.aws/credentials' before running
 
