@@ -106,6 +106,10 @@ resource "aws_autoscaling_group" "flask_app_asg" {
   launch_configuration = aws_launch_configuration.flask_app.name
   target_group_arns    = [aws_lb_target_group.flask_app.arn]
   health_check_type    = "ELB"
+
+  lifecycle { 
+    ignore_changes = [desired_capacity, target_group_arns]
+  }
 }
 
 # Define a launch configuration for the Auto Scaling Group.
@@ -187,16 +191,16 @@ resource "aws_lb_listener_rule" "flask_app" {
 resource "aws_cloudwatch_metric_alarm" "requests_alarm" {
   alarm_name          = "requests-alarm"
   comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = 1
+  evaluation_periods  = "1"
   metric_name         = "CPUUtilization" # Replace with your custom metric name
   namespace           = "AWS/EC2" # Replace with your custom namespace
-  period              = 60         # 1-minute period
+  period              = "60"         # 1-minute period
   statistic           = "Average"
-  threshold           = 0
+  threshold           = "10"
   alarm_description   = "Scale up when requests exceed 10 per minute"
   alarm_actions       = [aws_autoscaling_policy.scale_up_policy.arn]
   dimensions = {
-    YourDimensionName = "count" # Replace with your dimension name and value
+    AutoScalingGroupName = aws_autoscaling_group.flask_app_asg.name # Replace with your dimension name and value
   }
 }
 
