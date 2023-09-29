@@ -171,6 +171,6 @@ resource "aws_lb_listener_rule" "flask_app" {
   }
 }
 
-output "instance_public_ip" {
+output "load_balancer_public_ip" {
   value = aws_lb.flask_app_lb.dns_name
 }
