@@ -188,9 +188,9 @@ resource "aws_cloudwatch_metric_alarm" "requests_alarm" {
   alarm_name          = "requests-alarm"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 1
-  metric_name         = "Requests_Gt_10" # Replace with your custom metric name
-  namespace           = "Requests_Gt_10" # Replace with your custom namespace
-  period              = 60               # 1-minute period
+  metric_name         = "Requests" # Replace with your custom metric name
+  namespace           = "Requests" # Replace with your custom namespace
+  period              = 60         # 1-minute period
   statistic           = "SampleCount"
   threshold           = 10
   alarm_description   = "Scale up when requests exceed 10 per minute"
