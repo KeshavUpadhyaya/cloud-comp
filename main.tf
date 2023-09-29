@@ -62,8 +62,6 @@ resource "aws_lb" "flask_app_lb" {
 
   enable_http2 = true
 
-  enable_deletion_protection = false
-
   tags = {
     Name = "flask-app-lb"
   }
