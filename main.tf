@@ -156,6 +156,3 @@ resource "aws_lb_listener_rule" "flask_app_listener_rule" {
   }
 }
 
-output "instance_public_ip" {
-  value = aws_instance.flask_app.public_ip
-}
