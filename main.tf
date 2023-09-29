@@ -185,7 +185,7 @@ output "load_balancer_public_ip" {
 
 resource "aws_autoscaling_attachment" "flask_app" {
   autoscaling_group_name = aws_autoscaling_group.flask_app_asg.id
-  alb_target_group_arn   = aws_lb_target_group.flask_app.arn
+  alb_target_group_arn   = aws_lb_target_group.flask_app.id
 }
 
 
@@ -210,7 +210,7 @@ resource "aws_cloudwatch_metric_alarm" "scale_up" {
   statistic           = "Average"
 
   dimensions = {
-    AutoScalingGroupName = aws_autoscaling_group.flask_app.name
+    AutoScalingGroupName = aws_autoscaling_group.flask_app_asg.name
   }
 }
 
