@@ -1,4 +1,3 @@
-#Find a way to create VPC ID and use it in code
 #Figure out how our auto scaling is working
 #Add a new feature
 terraform {
@@ -11,7 +10,23 @@ terraform {
 }
 
 provider "aws" {
-  region = "us-east-1" 
+  region = "us-east-1"
+}
+
+data "aws_vpc" "default" {
+  default = true
+}
+
+data "aws_subnets" "selected_subnet" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
+
+  filter {
+    name   = "availability-zone"
+    values = ["us-east-1a", "us-east-1b"]
+  }
 }
 
 resource "tls_private_key" "flask_app_keypair" {
@@ -56,12 +71,11 @@ resource "aws_security_group" "flask_app_sg" {
   }
 }
 
+# standalone instance for testing (not part of autoscaling group)
 resource "aws_instance" "flask_app" {
   ami           = "ami-0261755bbcb8c4a84" # Ubuntu 20.04 LTS image in us-east-1
   instance_type = "t2.micro"
   key_name      = aws_key_pair.flask_app_keypair.key_name
-
-  vpc_security_group_ids = [aws_security_group.flask_app_sg.id]
 
   tags = {
     Name = "FlaskAppInstance"
@@ -86,25 +100,25 @@ resource "aws_instance" "flask_app" {
 
 # Define an Auto Scaling Group with a default launch configuration.
 resource "aws_autoscaling_group" "flask_app_asg" {
-  name                      = "flask-app-asg"
-  min_size                  = 2
-  max_size                  = 5
-  desired_capacity          = 2
-  availability_zones        = ["us-east-1a", "us-east-1b"]
-  launch_configuration      = aws_launch_configuration.flask_app.name
-  target_group_arns         = [aws_lb_target_group.flask_app.arn]
-  health_check_type         = "ELB"
+  name                 = "flask-app-asg"
+  min_size             = 2
+  max_size             = 5
+  desired_capacity     = 2
+  availability_zones   = ["us-east-1a", "us-east-1b"]
+  launch_configuration = aws_launch_configuration.flask_app.name
+  target_group_arns    = [aws_lb_target_group.flask_app.arn]
+  health_check_type    = "ELB"
 }
 
 # Define a launch configuration for the Auto Scaling Group.
 resource "aws_launch_configuration" "flask_app" {
-  name_prefix = "flask-app-"
-  image_id    = "ami-0261755bbcb8c4a84"
-  instance_type            = "t2.micro"
-  key_name                 = aws_key_pair.flask_app_keypair.key_name
+  name_prefix                 = "flask-app-"
+  image_id                    = "ami-0261755bbcb8c4a84"
+  instance_type               = "t2.micro"
+  key_name                    = aws_key_pair.flask_app_keypair.key_name
   associate_public_ip_address = true
-  security_groups          = [aws_security_group.flask_app_sg.id]
-  user_data = <<-EOF
+  security_groups             = [aws_security_group.flask_app_sg.id]
+  user_data                   = <<-EOF
               #!/bin/bash
               apt update
               apt install -y docker.io
@@ -123,12 +137,12 @@ resource "aws_launch_configuration" "flask_app" {
 
 # Define a load balancer.
 resource "aws_lb" "flask_app_lb" {
-  name               = "flask-app-lb"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.flask_app_sg.id]
+  name                       = "flask-app-lb"
+  internal                   = false
+  load_balancer_type         = "application"
+  security_groups            = [aws_security_group.flask_app_sg.id]
   enable_deletion_protection = false
-  subnets            = ["subnet-01c0e4cc8c8806e8d", "subnet-0df47cb0d3a3bbcd9", "subnet-03b648c363c78399d", "subnet-025f3f34dd217af6c"] # Replace with your subnet IDs
+  subnets                    = data.aws_subnets.selected_subnet.ids
 }
 
 # Define a target group for the load balancer.
@@ -137,7 +151,7 @@ resource "aws_lb_target_group" "flask_app" {
   port        = 80
   protocol    = "HTTP"
   target_type = "instance"
-  vpc_id      = "vpc-0a75fdd8125eccd02" # Replace with your VPC ID
+  vpc_id      = data.aws_vpc.default.id
 }
 
 # Create a listener for the load balancer.
@@ -147,7 +161,7 @@ resource "aws_lb_listener" "flask_app" {
   protocol          = "HTTP"
 
   default_action {
-    type             = "fixed-response"
+    type = "fixed-response"
     fixed_response {
       content_type = "text/plain"
       status_code  = "200"

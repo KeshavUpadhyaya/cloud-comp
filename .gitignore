@@ -6,3 +6,4 @@ venv
 .terraform.tfstate*
 aws_key.pem
 aws_keys_pairs.pem
+.DS_Store
