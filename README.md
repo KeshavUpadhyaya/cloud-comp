@@ -5,8 +5,8 @@ Make sure you've installed terraform and you've copied the AWS CLI credentials t
 
 Steps to run:
 - `terraform init`
-- `terrraform apply`
-- `terraform destroy` (to destroy the credentials)
+- `terraform apply`
+- `terraform destroy` (to destroy the resources provisioned)
 
 ## About the app:
 The app allows you to manage user accounts.
