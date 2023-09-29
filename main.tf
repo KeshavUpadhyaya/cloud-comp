@@ -8,7 +8,7 @@ terraform {
 }
 
 provider "aws" {
-  region = "us-east-1" # Change to your desired region
+  region = "us-east-1" 
 }
 
 resource "tls_private_key" "flask_app_keypair" {
@@ -148,6 +148,22 @@ resource "aws_lb_listener" "flask_app" {
     fixed_response {
       content_type = "text/plain"
       status_code  = "200"
+    }
+  }
+}
+
+resource "aws_lb_listener_rule" "flask_app" {
+  listener_arn = aws_lb_listener.flask_app.arn
+  priority     = 100
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.flask_app.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/"]
     }
   }
 }
