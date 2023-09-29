@@ -94,6 +94,11 @@ resource "aws_autoscaling_group" "flask_app_asg" {
   launch_configuration      = aws_launch_configuration.flask_app.name
   target_group_arns         = [aws_lb_target_group.flask_app.arn]
   health_check_type         = "ELB"
+
+  lifecycle { 
+    ignore_changes = [desired_capacity, target_group_arns]
+  }
+
 }
 
 # Define a launch configuration for the Auto Scaling Group.
@@ -173,4 +178,36 @@ resource "aws_lb_listener_rule" "flask_app" {
 
 output "load_balancer_public_ip" {
   value = aws_lb.flask_app_lb.dns_name
+}
+
+
+resource "aws_autoscaling_attachment" "flask_app" {
+  autoscaling_group_name = aws_autoscaling_group.flask_app_asg.id
+  alb_target_group_arn   = aws_lb_target_group.flask_app.arn
+}
+
+
+resource "aws_autoscaling_policy" "scale_up" {
+  name                   = "flask_app_scale_up"
+  autoscaling_group_name = aws_autoscaling_group.flask_app_asg.name
+  adjustment_type        = "ChangeInCapacity"
+  scaling_adjustment     = 1
+  cooldown               = 120
+}
+
+resource "aws_cloudwatch_metric_alarm" "scale_up" {
+  alarm_description   = "Monitors CPU utilization for Terramino ASG"
+  alarm_actions       = [aws_autoscaling_policy.scale_up.arn]
+  alarm_name          = "flask_app_alarm_scale_up"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  namespace           = "AWS/EC2"
+  metric_name         = "CPUUtilization"
+  threshold           = "10"
+  evaluation_periods  = "2"
+  period              = "120"
+  statistic           = "Average"
+
+  dimensions = {
+    AutoScalingGroupName = aws_autoscaling_group.flask_app.name
+  }
 }
