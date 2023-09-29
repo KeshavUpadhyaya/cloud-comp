@@ -163,11 +163,11 @@ resource "aws_lb_listener_rule" "flask_app" {
 
   condition {
     path_pattern {
-      values = ["/", "/api/v1/users"]
+      values = ["/", "/api/v1/users"."/api/v1/users/*"]
     }
   }
 }
 
 output "instance_public_ip" {
-  value = aws_instance.flask_app.*.public_ip
+  value = aws_lb.flask_app_lb.dns_name
 }
