@@ -1,5 +1,3 @@
-#Figure out how our auto scaling is working
-#Add a new feature
 terraform {
   required_providers {
     aws = {
