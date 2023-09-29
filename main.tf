@@ -53,28 +53,97 @@ resource "aws_security_group" "flask_app_sg" {
   }
 }
 
-# Elastic Load Balancer
+resource "aws_instance" "flask_app" {
+  ami           = "ami-0261755bbcb8c4a84" # Ubuntu 20.04 LTS image in us-east-1
+  instance_type = "t2.micro"
+  key_name      = aws_key_pair.flask_app_keypair.key_name
+
+  vpc_security_group_ids = [aws_security_group.flask_app_sg.id]
+
+  tags = {
+    Name = "FlaskAppInstance"
+  }
+
+  user_data = <<-EOF
+              #!/bin/bash
+              apt update
+              apt install -y docker.io
+              service docker start
+              usermod -aG docker ubuntu
+
+              # Fetch your Flask app code
+              git clone https://github.com/KeshavUpadhyaya/cloud-comp.git /home/ubuntu/flask-app
+
+              # Build and run the Flask app Docker container
+              cd /home/ubuntu/flask-app
+              docker build -t flask-app .
+              docker run -d -p 80:80 flask-app
+              EOF
+}
+
+# Define an Auto Scaling Group with a default launch configuration.
+resource "aws_autoscaling_group" "flask_app_asg" {
+  name                      = "flask-app-asg"
+  min_size                  = 2
+  max_size                  = 5
+  desired_capacity          = 2
+  availability_zones        = ["us-east-1a", "us-east-1b"]
+  launch_configuration      = aws_launch_configuration.flask_app.name
+  target_group_arns         = [aws_lb_target_group.flask_app.arn]
+  health_check_type         = "ELB"
+}
+
+# Define a launch configuration for the Auto Scaling Group.
+resource "aws_launch_configuration" "flask_app" {
+  name_prefix = "flask-app-"
+  image_id    = "ami-0261755bbcb8c4a84"
+  instance_type            = "t2.micro"
+  key_name                 = aws_key_pair.flask_app_keypair.key_name
+  associate_public_ip_address = true
+  security_groups          = [aws_security_group.flask_app_sg.id]
+  user_data = <<-EOF
+              #!/bin/bash
+              apt update
+              apt install -y docker.io
+              service docker start
+              usermod -aG docker ubuntu
+
+              # Fetch your Flask app code
+              git clone https://github.com/KeshavUpadhyaya/cloud-comp.git /home/ubuntu/flask-app
+
+              # Build and run the Flask app Docker container
+              cd /home/ubuntu/flask-app
+              docker build -t flask-app .
+              docker run -d -p 80:80 flask-app
+              EOF
+}
+
+# Define a load balancer.
 resource "aws_lb" "flask_app_lb" {
   name               = "flask-app-lb"
   internal           = false
   load_balancer_type = "application"
+  security_groups    = [aws_security_group.flask_app_sg.id]
   enable_deletion_protection = false
-
-  enable_http2 = true
-
-  tags = {
-    Name = "flask-app-lb"
-  }
 }
 
-resource "aws_lb_listener" "flask_app_lb_listener" {
+# Define a target group for the load balancer.
+resource "aws_lb_target_group" "flask_app" {
+  name        = "flask-app-target-group"
+  port        = 80
+  protocol    = "HTTP"
+  target_type = "instance"
+}
+
+# Create a listener for the load balancer.
+resource "aws_lb_listener" "flask_app" {
   load_balancer_arn = aws_lb.flask_app_lb.arn
   port              = 80
   protocol          = "HTTP"
 
   default_action {
     type             = "fixed-response"
-    fixed_response   = {
+    fixed_response {
       content_type = "text/plain"
       status_code  = "200"
       content      = "OK"
@@ -82,77 +151,6 @@ resource "aws_lb_listener" "flask_app_lb_listener" {
   }
 }
 
-# Auto Scaling Group
-resource "aws_launch_configuration" "flask_app_launch_config" {
-  name_prefix                 = "flask-app-launch-config"
-  image_id                    = "ami-0261755bbcb8c4a84" # Replace with your desired AMI
-  instance_type               = "t2.micro" # Replace with your desired instance type
-  security_groups             = [aws_security_group.flask_app_sg.name]
-  key_name                    = aws_key_pair.flask_app_keypair.key_name
-  user_data                   = <<-EOF
-    #!/bin/bash
-    apt update
-    apt install -y docker.io
-    service docker start
-    usermod -aG docker ubuntu
-
-    # Fetch your Flask app code
-    git clone https://github.com/KeshavUpadhyaya/cloud-comp.git /home/ubuntu/flask-app
-
-    # Build and run the Flask app Docker container 
-    cd /home/ubuntu/flask-app
-    docker build -t flask-app .
-    docker run -d -p 80:80 flask-app
-    EOF
-  lifecycle {
-    create_before_destroy = true
-  }
+output "instance_public_ip" {
+  value = aws_instance.flask_app.*.public_ip
 }
-
-resource "aws_autoscaling_group" "flask_app_asg" {
-  name                      = "flask-app-asg"
-  max_size                  = 3 # Adjust as needed
-  min_size                  = 1 # Adjust as needed
-  desired_capacity          = 2 # Adjust as needed
-  launch_configuration      = aws_launch_configuration.flask_app_launch_config.name
-  health_check_type         = "EC2"
-  health_check_grace_period = 300
-  wait_for_capacity_timeout = "10m"
-
-  target_group_arns = [aws_lb_target_group.flask_app_target_group.arn]
-}
-
-resource "aws_lb_target_group" "flask_app_target_group" {
-  name     = "flask-app-target-group"
-  port     = 80
-  protocol = "HTTP"
-  vpc_id   = "vpc-xxxxxx" # Replace with your VPC ID
-
-  target_type = "instance"
-
-  health_check {
-    path                = "/health" # Adjust the path as needed
-    port                = 80
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-    timeout             = 3
-    interval            = 30
-  }
-}
-
-resource "aws_lb_listener_rule" "flask_app_listener_rule" {
-  listener_arn = aws_lb_listener.flask_app_lb_listener.arn
-  priority     = 100
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.flask_app_target_group.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/"]
-    }
-  }
-}
-
