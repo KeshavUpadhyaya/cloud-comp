@@ -185,6 +185,34 @@ resource "aws_lb_listener_rule" "flask_app" {
   }
 }
 
+# Setting up autoscaling alaram
+resource "aws_cloudwatch_metric_alarm" "requests_alarm" {
+  alarm_name          = "requests-alarm"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "Requests_Gt_10" # Replace with your custom metric name
+  namespace           = "Requests_Gt_10" # Replace with your custom namespace
+  period              = 60               # 1-minute period
+  statistic           = "SampleCount"
+  threshold           = 10
+  alarm_description   = "Scale up when requests exceed 10 per minute"
+  alarm_actions       = [aws_autoscaling_policy.scale_up_policy.arn]
+  dimensions = {
+    YourDimensionName = "count" # Replace with your dimension name and value
+  }
+}
+
+resource "aws_autoscaling_policy" "scale_up_policy" {
+  name                   = "scale-up-policy"
+  scaling_adjustment     = 1 # Increase desired capacity by 1 instance/container
+  adjustment_type        = "ChangeInCapacity"
+  cooldown               = 300 # Cooldown period in seconds
+  autoscaling_group_name = aws_autoscaling_group.flask_app_asg.name
+}
+
 output "load_balancer_public_ip" {
   value = aws_lb.flask_app_lb.dns_name
 }
+
+
+
