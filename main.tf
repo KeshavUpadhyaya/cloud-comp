@@ -133,6 +133,7 @@ resource "aws_lb_target_group" "flask_app" {
   port        = 80
   protocol    = "HTTP"
   target_type = "instance"
+  vpc_id      = "vpc-0a75fdd8125eccd02" # Replace with your VPC ID
 }
 
 # Create a listener for the load balancer.
