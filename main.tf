@@ -135,7 +135,6 @@ resource "aws_lb" "flask_app_lb" {
   load_balancer_type = "application"
   security_groups    = [aws_security_group.flask_app_sg.id]
   enable_deletion_protection = false
-  subnets            = ["subnet-01c0e4cc8c8806e8d", "subnet-0df47cb0d3a3bbcd9", "subnet-03b648c363c78399d", "subnet-025f3f34dd217af6c"] # Replace with your subnet IDs
 }
 
 # Define a target group for the load balancer.
