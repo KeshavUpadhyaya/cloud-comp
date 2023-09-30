@@ -269,7 +269,7 @@ resource "aws_s3_bucket_public_access_block" "access_block" {
 
 resource "aws_s3_object" "flask_bucket" {
   bucket = aws_s3_bucket.flask_bucket.bucket
-  key    = "user.db"  # Name of the file in the bucket
+  key    = "users-db"  # Name of the file in the bucket
   source = "./users.db"  # Local path to the user.db file
 }
 
