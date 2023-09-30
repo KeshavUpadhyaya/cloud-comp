@@ -273,12 +273,37 @@ resource "aws_s3_object" "flask_bucket" {
   source = "./users.db"  # Local path to the user.db file
 }
 
+resource "aws_s3_bucket_policy" "secure_bucket_policy" {
+  bucket = "${aws_s3_bucket.flask_bucket.id}"
+
+  policy = <<EOT
+              {
+                  "Version": "2012-10-17",
+                  "Statement": [
+                      {
+                          "Sid": "ListObjectsInBucket",
+                          "Effect": "Allow",
+                          "Action": ["s3:ListBucket"],
+                          "Resource": "${aws_s3_bucket.flask_bucket.arn}/*"
+                      },
+                      {
+                          "Sid": "AllObjectActions",
+                          "Effect": "Allow",
+                          "Action": "s3:*Object",
+                          "Resource": "${aws_s3_bucket.flask_bucket.arn}/*"
+                      }
+                  ]
+              }
+
+EOT
+}
+
 resource "aws_s3_bucket_cors_configuration" "flask_bucket" {
   bucket = aws_s3_bucket.flask_bucket.id
 
   cors_rule {
     allowed_headers = ["*"]
-    allowed_methods = ["PUT", "POST","GET"]
+    allowed_methods = ["PUT", "POST","GET", "DELETE"]
     allowed_origins = ["*"]
     expose_headers  = ["ETag"]
     max_age_seconds = 3000
