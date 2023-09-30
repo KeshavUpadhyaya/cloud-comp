@@ -274,7 +274,7 @@ resource "aws_s3_object" "flask_bucket" {
 }
 
 resource "aws_s3_bucket_policy" "secure_bucket_policy" {
-  bucket = "${aws_s3_bucket.flask_bucket.id}"
+  bucket = aws_s3_bucket.flask_bucket.id
 
   policy = <<EOT
               {
@@ -283,14 +283,16 @@ resource "aws_s3_bucket_policy" "secure_bucket_policy" {
                       {
                           "Sid": "ListObjectsInBucket",
                           "Effect": "Allow",
+                          "Principal": "*",
                           "Action": ["s3:ListBucket"],
-                          "Resource": "${aws_s3_bucket.flask_bucket.arn}/*"
+                          "Resource": "${aws_s3_bucket.flask_bucket.id}/*"
                       },
                       {
                           "Sid": "AllObjectActions",
                           "Effect": "Allow",
+                          "Principal": "*",
                           "Action": "s3:*Object",
-                          "Resource": "${aws_s3_bucket.flask_bucket.arn}/*"
+                          "Resource": "${aws_s3_bucket.flask_bucket.id}/*"
                       }
                   ]
               }
