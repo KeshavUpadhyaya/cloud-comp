@@ -193,7 +193,7 @@ resource "aws_cloudwatch_metric_alarm" "requests_up_alarm" {
   period              = 60                   # 1-minute period
   statistic           = "Sum"
   threshold           = 10
-  alarm_description   = "Scale up when requests exceed 10 per minute"
+  alarm_description   = "Scale up when requests exceed 10 per minute for 3 minutes"
   actions_enabled     = true
   alarm_actions       = [aws_autoscaling_policy.scale_up_policy.arn]
   dimensions = {
@@ -210,7 +210,7 @@ resource "aws_cloudwatch_metric_alarm" "requests_down_alarm" {
   period              = 60                   # 1-minute period
   statistic           = "Sum"
   threshold           = 10
-  alarm_description   = "Scale up when requests exceed 10 per minute"
+  alarm_description   = "Scale down when requests go below 10 per minute for 3 minutes"
   actions_enabled     = true
   alarm_actions       = [aws_autoscaling_policy.scale_down_policy.arn]
   dimensions = {
