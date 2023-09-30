@@ -236,7 +236,7 @@ resource "aws_autoscaling_policy" "scale_down_policy" {
 
 
 resource "aws_s3_bucket" "flask_bucket" {
-  bucket = "s3-bucket-for-flask-app"  # Change to your desired bucket name
+  bucket = "s3-bucket-flask-app"  # Change to your desired bucket name
   
 }
 
@@ -248,7 +248,10 @@ resource "aws_s3_bucket_ownership_controls" "flask_bucket" {
 }
 
 resource "aws_s3_bucket_acl" "flask_bucket" {
-  depends_on = [aws_s3_bucket_ownership_controls.flask_bucket]
+  depends_on = [
+    aws_s3_bucket_ownership_controls.flask_bucket,
+    aws_s3_bucket_public_access_block.access_block,
+    ]
 
   bucket = aws_s3_bucket.flask_bucket.id
   acl    = "public-read-write"
