@@ -23,7 +23,7 @@ data "aws_subnets" "selected_subnet" {
 
   filter {
     name   = "availability-zone"
-    values = ["us-east-1a", "us-east-1b"]
+    values = ["us-east-1a", "us-east-1b", "us-east-1c", "us-east-1d"]
   }
 }
 
@@ -102,14 +102,10 @@ resource "aws_autoscaling_group" "flask_app_asg" {
   min_size             = 2
   max_size             = 5
   desired_capacity     = 2
-  availability_zones   = ["us-east-1a", "us-east-1b"]
+  availability_zones   = ["us-east-1a", "us-east-1b", "us-east-1c", "us-east-1d"]
   launch_configuration = aws_launch_configuration.flask_app.name
   target_group_arns    = [aws_lb_target_group.flask_app.arn]
   health_check_type    = "ELB"
-
-  lifecycle { 
-    ignore_changes = [desired_capacity, target_group_arns]
-  }
 }
 
 # Define a launch configuration for the Auto Scaling Group.
@@ -188,19 +184,37 @@ resource "aws_lb_listener_rule" "flask_app" {
 }
 
 # Setting up autoscaling alaram
-resource "aws_cloudwatch_metric_alarm" "requests_alarm" {
-  alarm_name          = "requests-alarm"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "1"
-  metric_name         = "CPUUtilization" # Replace with your custom metric name
-  namespace           = "AWS/EC2" # Replace with your custom namespace
-  period              = "60"         # 1-minute period
-  statistic           = "Average"
-  threshold           = "10"
-  alarm_description   = "Scale up when requests exceed 10 per minute"
+resource "aws_cloudwatch_metric_alarm" "requests_up_alarm" {
+  alarm_name          = "requests-up-alarm"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 3
+  metric_name         = "RequestCount"       # The metric name for an ELB request count
+  namespace           = "AWS/ApplicationELB" # The default namespace for ELB metrics
+  period              = 60                   # 1-minute period
+  statistic           = "Sum"
+  threshold           = 10
+  alarm_description   = "Scale up when requests exceed 10 per minute for 3 minutes"
+  actions_enabled     = true
   alarm_actions       = [aws_autoscaling_policy.scale_up_policy.arn]
   dimensions = {
-    AutoScalingGroupName = aws_autoscaling_group.flask_app_asg.name # Replace with your dimension name and value
+    LoadBalancer = element(split("loadbalancer/", aws_lb.flask_app_lb.arn), 1)
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "requests_down_alarm" {
+  alarm_name          = "requests-down-alarm"
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = 3
+  metric_name         = "RequestCount"       # The metric name for an ELB request count
+  namespace           = "AWS/ApplicationELB" # The default namespace for ELB metrics
+  period              = 60                   # 1-minute period
+  statistic           = "Sum"
+  threshold           = 10
+  alarm_description   = "Scale down when requests go below 10 per minute for 3 minutes"
+  actions_enabled     = true
+  alarm_actions       = [aws_autoscaling_policy.scale_down_policy.arn]
+  dimensions = {
+    LoadBalancer = element(split("loadbalancer/", aws_lb.flask_app_lb.arn), 1)
   }
 }
 
@@ -212,8 +226,31 @@ resource "aws_autoscaling_policy" "scale_up_policy" {
   autoscaling_group_name = aws_autoscaling_group.flask_app_asg.name
 }
 
-output "load_balancer_public_ip" {
-  value = aws_lb.flask_app_lb.dns_name
+resource "aws_autoscaling_policy" "scale_down_policy" {
+  name                   = "scale-down-policy"
+  scaling_adjustment     = -1 # Decrease desired capacity by 1 instance/container
+  adjustment_type        = "ChangeInCapacity"
+  cooldown               = 300 # Cooldown period in seconds
+  autoscaling_group_name = aws_autoscaling_group.flask_app_asg.name
 }
 
 
+resource "aws_s3_bucket" "flask_bucket" {
+  bucket = "flask-bucket"  # Change to your desired bucket name
+  acl    = "public"  # Adjust the ACL as needed
+}
+
+resource "aws_s3_bucket_object" "user_db" {
+  bucket = aws_s3_bucket.flask_bucket.bucket
+  key    = "user.db"  # Name of the file in the bucket
+  source = "./users.db"  # Local path to the user.db file
+}
+
+output "bucket_url" {
+  value = aws_s3_bucket.flask_bucket.bucket_domain_name
+}
+
+
+output "load_balancer_public_ip" {
+  value = aws_lb.flask_app_lb.dns_name
+}
