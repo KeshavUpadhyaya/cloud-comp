@@ -254,7 +254,7 @@ resource "aws_s3_bucket_acl" "flask_bucket" {
     ]
 
   bucket = aws_s3_bucket.flask_bucket.id
-  acl    = "public-read-write"
+  acl    = "public-read"
 }
 
 resource "aws_s3_bucket_public_access_block" "access_block" {
@@ -285,14 +285,14 @@ resource "aws_s3_bucket_policy" "secure_bucket_policy" {
                           "Effect": "Allow",
                           "Principal": "*",
                           "Action": ["s3:ListBucket"],
-                          "Resource": "${aws_s3_bucket.flask_bucket.id}/*"
+                          "Resource": "${aws_s3_bucket.flask_bucket.arn}"
                       },
                       {
                           "Sid": "AllObjectActions",
                           "Effect": "Allow",
                           "Principal": "*",
                           "Action": "s3:*Object",
-                          "Resource": "${aws_s3_bucket.flask_bucket.id}/*"
+                          "Resource": "${aws_s3_bucket.flask_bucket.arn}"
                       }
                   ]
               }
