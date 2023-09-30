@@ -237,13 +237,44 @@ resource "aws_autoscaling_policy" "scale_down_policy" {
 
 resource "aws_s3_bucket" "flask_bucket" {
   bucket = "flask-bucket"  # Change to your desired bucket name
-  acl    = "public"  # Adjust the ACL as needed
+  
 }
 
-resource "aws_s3_bucket_object" "user_db" {
+resource "aws_s3_bucket_ownership_controls" "flask_bucket" {
+  bucket = aws_s3_bucket.flask_bucket.id
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+resource "aws_s3_bucket_acl" "flask_bucket" {
+  depends_on = [aws_s3_bucket_ownership_controls.flask_bucket]
+
+  bucket = aws_s3_bucket.flask_bucket.id
+  acl    = "public-read-write"
+}
+
+resource "aws_s3_object" "flask_bucket" {
   bucket = aws_s3_bucket.flask_bucket.bucket
   key    = "user.db"  # Name of the file in the bucket
   source = "./users.db"  # Local path to the user.db file
+}
+
+resource "aws_s3_bucket_cors_configuration" "flask_bucket" {
+  bucket = aws_s3_bucket.flask_bucket.id
+
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["PUT", "POST","GET"]
+    allowed_origins = ["*"]
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3000
+  }
+
+  cors_rule {
+    allowed_methods = ["GET"]
+    allowed_origins = ["*"]
+  }
 }
 
 output "bucket_url" {
