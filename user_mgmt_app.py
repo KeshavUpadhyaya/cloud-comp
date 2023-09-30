@@ -93,7 +93,9 @@ def list_all_users():
 
 @app.route('/')
 def home():
-    return "User account management app is working! Owner: CloudComp2"
+    return '''<p> User account management app is working! Owner: CloudComp2 </p>
+    <p> Please check the <a target="_blank" href="https://github.com/KeshavUpadhyaya/cloud-comp/blob/main/README.md">README</a> for API documentation. </p>
+    '''
 
 
 if __name__ == '__main__':

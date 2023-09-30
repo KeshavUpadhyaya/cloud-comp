@@ -8,6 +8,13 @@ Steps to run:
 - `terraform apply`
 - `terraform destroy` (to destroy the resources provisioned)
 
+## AWS Services Used:
+- EC2
+- Load Balancing
+- Auto Scaling
+- Cloud Watch
+
+
 ## About the app:
 The app allows you to manage user accounts.
 

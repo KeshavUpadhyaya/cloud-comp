@@ -184,21 +184,37 @@ resource "aws_lb_listener_rule" "flask_app" {
 }
 
 # Setting up autoscaling alaram
-resource "aws_cloudwatch_metric_alarm" "requests_alarm" {
-  alarm_name          = "requests-alarm"
+resource "aws_cloudwatch_metric_alarm" "requests_up_alarm" {
+  alarm_name          = "requests-up-alarm"
   comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = "2"
-  metric_name         = "Requests" # Replace with your custom metric name
-  namespace           = "Requests" # Replace with your custom namespace
-  period              = "60"         # 1-minute period
-  statistic           = "SampleCount"
-  threshold           = "10"
+  evaluation_periods  = 3
+  metric_name         = "RequestCount"       # The metric name for an ELB request count
+  namespace           = "AWS/ApplicationELB" # The default namespace for ELB metrics
+  period              = 60                   # 1-minute period
+  statistic           = "Sum"
+  threshold           = 10
   alarm_description   = "Scale up when requests exceed 10 per minute"
-  actions_enabled     = "true"
-  statistic           = "Average"
+  actions_enabled     = true
   alarm_actions       = [aws_autoscaling_policy.scale_up_policy.arn]
   dimensions = {
-    AutoScalingGroupName  = aws_autoscaling_group.flask_app_asg.name
+    LoadBalancer = element(split("loadbalancer/", aws_lb.flask_app_lb.arn), 1)
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "requests_down_alarm" {
+  alarm_name          = "requests-down-alarm"
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = 3
+  metric_name         = "RequestCount"       # The metric name for an ELB request count
+  namespace           = "AWS/ApplicationELB" # The default namespace for ELB metrics
+  period              = 60                   # 1-minute period
+  statistic           = "Sum"
+  threshold           = 10
+  alarm_description   = "Scale up when requests exceed 10 per minute"
+  actions_enabled     = true
+  alarm_actions       = [aws_autoscaling_policy.scale_down_policy.arn]
+  dimensions = {
+    LoadBalancer = element(split("loadbalancer/", aws_lb.flask_app_lb.arn), 1)
   }
 }
 
@@ -210,9 +226,14 @@ resource "aws_autoscaling_policy" "scale_up_policy" {
   autoscaling_group_name = aws_autoscaling_group.flask_app_asg.name
 }
 
+resource "aws_autoscaling_policy" "scale_down_policy" {
+  name                   = "scale-down-policy"
+  scaling_adjustment     = -1 # Decrease desired capacity by 1 instance/container
+  adjustment_type        = "ChangeInCapacity"
+  cooldown               = 300 # Cooldown period in seconds
+  autoscaling_group_name = aws_autoscaling_group.flask_app_asg.name
+}
+
 output "load_balancer_public_ip" {
   value = aws_lb.flask_app_lb.dns_name
 }
-
-
-
